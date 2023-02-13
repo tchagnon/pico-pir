@@ -1,7 +1,7 @@
-
 #![no_std]
 #![no_main]
 
+use embedded_hal::digital::v2::InputPin;
 use embedded_hal::digital::v2::OutputPin;
 use panic_halt as _;
 
@@ -53,11 +53,31 @@ fn main() -> ! {
     // Set the LED to be an output
     let mut led_pin = pins.gpio0.into_push_pull_output();
 
+    let pir_pin = pins.gpio16.into_pull_down_input();
+
+    let mut triggered = false;
+
     // Blink the LED at 1 Hz
     loop {
-        led_pin.set_high().unwrap();
-        delay.delay_ms(500);
-        led_pin.set_low().unwrap();
-        delay.delay_ms(500);
+        let led_on: bool;
+        if pir_pin.is_high().unwrap() {
+            if !triggered {
+                led_on = true;
+                triggered = true;
+            } else {
+                led_on = false;
+            }
+        } else {
+            led_on = false;
+            triggered = false;
+        }
+
+        if led_on {
+            led_pin.set_high().unwrap();
+            delay.delay_ms(100);
+        } else {
+            led_pin.set_low().unwrap();
+            delay.delay_ms(100);
+        }
     }
 }
